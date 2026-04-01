@@ -84,3 +84,18 @@
     name: net.inet.ip.forwarding
     value: '1'
     state: present
+
+- name: Installazione Unbound DNS resolver
+  community.general.pkgng:
+    name: unbound
+    state: present
+
+- name: Abilitazione servizio Unbound
+  community.general.sysrc:
+    name: unbound_enable
+    value: YES
+
+- name: Avvio servizio Unbound
+  service:
+    name: unbound
+    state: started
