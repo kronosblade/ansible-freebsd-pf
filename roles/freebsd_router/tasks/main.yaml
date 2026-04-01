@@ -40,7 +40,7 @@
 
 - name: Installazione pacchetti di sistema
   community.general.pkgng:
-    name: [doas, htop, nano, tree]
+    name: [doas, htop, nano, tree, bind-tools]
     state: present
 
 - name: Installazione expiretable (opzionale) o pulizia via Cron
