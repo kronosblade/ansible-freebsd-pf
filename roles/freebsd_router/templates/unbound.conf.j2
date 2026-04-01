@@ -1,0 +1,23 @@
+server:
+    verbosity: 1
+    interface: 127.0.0.1
+    interface: {{ ansible_default_ipv4.address }}
+    do-tcp: yes
+    do-udp: yes
+    do-ip4: yes
+    do-ip6: no
+    access-control: 127.0.0.0/8 allow
+    access-control: {{ lan_network | default('192.168.1.0/24') }} allow
+    harden-dnssec-stripped: yes
+    harden-below-nxdomain: yes
+    harden-referral-path: yes
+    use-caps-for-id: yes
+    val-clean-additional: yes
+    prefetch: yes
+    cache-min-ttl: 3600
+    cache-max-ttl: 86400
+
+forward-zone:
+    name: "."
+    forward-addr: 9.9.9.9
+    forward-addr: 1.1.1.1

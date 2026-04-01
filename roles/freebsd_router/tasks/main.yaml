@@ -99,3 +99,12 @@
   service:
     name: unbound
     state: started
+
+- name: Configurazione Unbound
+  template:
+    src: unbound.conf.j2
+    dest: /usr/local/etc/unbound/unbound.conf
+    owner: root
+    group: wheel
+    mode: '0644'
+  notify: restart unbound
