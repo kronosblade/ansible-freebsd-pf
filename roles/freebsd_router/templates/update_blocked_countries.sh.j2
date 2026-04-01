@@ -1,0 +1,32 @@
+#!/bin/sh
+# Generato da Ansible - Non modificare a mano
+
+original_file="/var/db/blocked_countries.txt"
+temp_file="/tmp/blocked_countries_temp.txt"
+batch_size=10000
+
+# Scarica/Genera i dati aggiornati
+/usr/local/bin/ipup -p -t CL:FR:PT > $original_file
+
+# Funzione per aggiungere batch
+add_batch() {
+    /sbin/pfctl -t blocked_countries -T add -f "$temp_file"
+    > $temp_file
+}
+
+# Reset della tabella per evitare duplicati/conflitti
+/sbin/pfctl -t blocked_countries -T flush
+
+line_count=0
+while IFS= read -r line; do
+    echo "$line" >> "$temp_file"
+    line_count=$((line_count + 1))
+    if [ $line_count -ge $batch_size ]; then
+        add_batch
+        line_count=0
+    fi
+done < "$original_file"
+
+if [ $line_count -gt 0 ]; then
+    add_batch
+fi

@@ -1,0 +1,16 @@
+# Ignora i file di configurazione reali per ansible-freebsd-router
+# File Sensibili
+hosts.ini
+group_vars/bsd_router.yml
+.vault_pass
+*.key
+*.pub
+
+# File di esempio
+!hosts.ini.example
+!group_vars/bsd_router.yml.example
+
+# File temporanei
+*.retry
+*.log
+.ansible/

@@ -1,0 +1,86 @@
+---
+- name: Configura la chiave SSH autorizzata
+  ansible.posix.authorized_key:
+    user: "{{ user_name }}"
+    state: present
+    key: "{{ lookup('file', pub_key_path) }}"
+  
+- name: Installazione pacchetto ipdbtools per GeoBlocking
+  community.general.pkgng:
+    name: ipdbtools
+    state: present
+
+- name: Creazione script di aggiornamento GeoBlocking
+  template:
+    src: update_blocked_countries.sh.j2
+    dest: /usr/local/sbin/update_blocked_countries.sh
+    owner: root
+    group: wheel
+    mode: '0755'
+
+- name: Primo download del database IP (ipdb-update)
+  command: /usr/local/bin/ipdb-update.sh
+  args:
+    creates: /usr/local/share/ipdb/ipdb.db # Lo esegue solo se il DB non esiste
+
+- name: Automazione aggiornamento GeoBlocking via Cron
+  cron:
+    name: "Update GeoBlocking Database"
+    user: "root"
+    minute: "55"
+    hour: "9"
+    job: "/usr/local/bin/ipdb-update.sh > /dev/null 2>&1 && /usr/local/sbin/update_blocked_countries.sh"
+
+- name: Assicura l'esecuzione al reboot via Cron
+  cron:
+    name: "Update GeoBlocking on Reboot"
+    user: "root"
+    special_time: reboot
+    job: "/usr/local/bin/ipdb-update.sh > /dev/null 2>&1 && /usr/local/sbin/update_blocked_countries.sh"
+
+- name: Installazione pacchetti di sistema
+  community.general.pkgng:
+    name: [doas, htop, nano, tree]
+    state: present
+
+- name: Installazione expiretable (opzionale) o pulizia via Cron
+  cron:
+    name: "Svuota tabella bruteforce ogni ora"
+    minute: "0"
+    job: "/sbin/pfctl -t bruteforce -T expire 86400" # 86400 secondi = 24h
+
+- name: Configurazione privilegi doas
+  copy:
+    content: "permit persist :wheel\n"
+    dest: /usr/local/etc/doas.conf
+    mode: '0400'
+
+- name: Abilitazione servizi nel rc.conf (sysrc)
+  community.general.sysrc:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - { key: "gateway_enable", value: "YES" }
+    - { key: "pf_enable", value: "YES" }
+    - { key: "pf_rules", value: "/etc/pf.conf" }
+    - { key: "pflog_enable", value: "YES" }
+
+- name: Inizializzazione manuale della tabella blocked_countries
+  shell: pfctl -t blocked_countries -T add 127.0.0.2
+  failed_when: false # Non fallire se la tabella esiste già o PF non è ancora attivo
+
+- name: Configurazione file PF (con validazione)
+  template:
+    src: pf.conf.j2
+    dest: /etc/pf.conf
+    owner: root
+    group: wheel
+    mode: '0600'
+    validate: /sbin/pfctl -nf %s
+  notify: reload pf
+
+- name: Attivazione immediata del forwarding nel kernel
+  sysctl:
+    name: net.inet.ip.forwarding
+    value: '1'
+    state: present

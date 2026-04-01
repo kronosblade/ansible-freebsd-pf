@@ -1,0 +1,7 @@
+[bsd_router]
+# Sostituisci con l'IP del tuo router, l'utente e la porta SSH scelta
+router_name_or_ip ansible_host=192.168.x.x ansible_user=username ansible_port=4345
+
+[bsd_router:vars]
+# Percorso generico alla chiave privata (es. quella generata per il progetto)
+ansible_ssh_private_key_file=~/.ssh/id_rsa

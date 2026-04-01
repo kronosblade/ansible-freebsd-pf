@@ -1,0 +1,51 @@
+# --- 1. Macro & Tables (Dichiarazioni) ---
+ext_if   = "{{ ext_if }}"
+int_if   = "{{ int_if }}"
+int_net  = "{{ int_net }}"
+ssh_port = "{{ ssh_port }}"
+admin_ip = "{{ admin_ip }}"
+
+table <trusted_lan> const { {{ admin_ip }}, 127.0.0.1 }
+table <bruteforce> persist
+table <blocked_countries> persist # Tabella per il GeoBlocking
+
+# --- 2. Options (Opzioni globali) ---
+set skip on lo0
+
+# --- 3. Normalization (Pulizia pacchetti) ---
+scrub all reassemble tcp fragment reassemble
+
+# --- 4. Translation (NAT & RDR) ---
+# Il NAT e il Port Forwarding devono venire PRIMA del filtraggio
+nat on $ext_if from $int_net to any -> ($ext_if) static-port
+rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port {{ mumble_port }} -> {{ mumble_jail_ip }}
+
+# --- 5. Filtering (Regole di passaggio/blocco) ---
+# Blocchi immediati (Quick)
+block in quick from <bruteforce>
+block drop log quick from <blocked_countries> # <--- NUOVA REGOLA
+# Policy di default
+block in all
+
+# SSH con protezione Overload
+pass in quick on $ext_if proto tcp from <trusted_lan> to ($ext_if) port $ssh_port \
+    flags S/SA keep state \
+    (max-src-conn 5, max-src-conn-rate 3/30, overload <bruteforce> flush global)
+
+# Accesso LAN -> Router
+pass in quick on $ext_if from $admin_ip to $int_net keep state
+
+# Mumble TCP (Controllo)
+pass in quick on $ext_if proto tcp from any to {{ mumble_jail_ip }} port {{ mumble_port }} \
+    flags S/SA keep state \
+    (max-src-conn 20, max-src-conn-rate 10/60, overload <bruteforce> flush global)
+
+# Mumble UDP (Voce)
+pass in quick on $ext_if proto udp from any to {{ mumble_jail_ip }} port {{ mumble_port }} \
+    keep state
+
+# Interfaccia interna
+pass in on $int_if from $int_if:network to any
+
+# Traffico in uscita (Outbound)
+pass out all keep state

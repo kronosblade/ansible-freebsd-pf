@@ -1,0 +1,15 @@
+---
+# --- Variabili di Rete ---
+ext_if: "vtnet0"
+int_if: "vtnet1"
+int_net: "1.2.3.4/24"
+
+# --- Indirizzi IP e Porte ---
+ssh_port: "1234"
+mumble_jail_ip: "1.2.3.4"
+mumble_port: "1234"
+admin_ip: "192.168.0.x"
+
+# --- Utente e Chiavi ---
+user_name: "username"
+pub_key_path: "~/.ssh/id_rsa.pub"

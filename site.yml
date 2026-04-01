@@ -1,0 +1,7 @@
+---
+- name: Configura Router FreeBSD
+  hosts: bsd_router
+  become: yes
+
+  roles:
+    - freebsd_router
