@@ -6,3 +6,8 @@
   service:
     name: unbound
     state: restarted
+
+- name: restart dhcpd
+  service:
+    name: isc-dhcpd
+    state: restarted

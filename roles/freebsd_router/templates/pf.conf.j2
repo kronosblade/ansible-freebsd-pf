@@ -27,10 +27,10 @@ scrub in all fragment reassemble
 # ==============================================================================
 # --- 3. Translation (NAT & RDR) ---
 # ==============================================================================
-# NAT: Permette alla rete 10.0.0.0/24 di uscire su Internet tramite l'IP 192.168.0.30
+# NAT: Permette alla rete 10.0.0.0/24 di uscire su Internet tramite l'IP 192.168.0.x
 nat on $ext_if from $int_net to any -> ($ext_if) static-port
 
-# Redirect Mumble: Traffico dall'esterno verso il container LXC/Jail
+# Redirect Mumble
 rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port $mumble_port -> $mumble_ip
 
 # ==============================================================================
@@ -67,7 +67,7 @@ pass in quick on $ext_if proto icmp from <trusted_lan> to ($ext_if)
 
 # --- D. Forwarding (Traffico verso i Server interni) ---
 
-# Mumble: Accesso pubblico al server 10.0.0.5
+# Mumble: Accesso pubblico al server 10.0.0.x
 pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
     flags S/SA keep state \
     (max-src-conn 20, max-src-conn-rate 10/60, overload <bruteforce> flush global)
