@@ -1,0 +1,45 @@
+---
+# ==============================================================================
+# Suricata IDS - Modalità passiva (AF_PACKET)
+# Il traffico viene copiato dall'interfaccia WAN e analizzato senza interruzione.
+# ==============================================================================
+
+- name: Installazione Suricata
+  community.general.pkgng:
+    name: suricata
+    state: present
+
+- name: Abilitazione Suricata nel rc.conf
+  community.general.sysrc:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - { key: "suricata_enable", value: "YES" }
+    - { key: "suricata_interface", value: "{{ ext_if }}" }
+
+- name: Primo aggiornamento ruleset (Emerging Threats Open)
+  command: suricata-update
+  args:
+    creates: /var/lib/suricata/rules/suricata.rules
+
+- name: Deploy configurazione Suricata
+  template:
+    src: "{{ playbook_dir }}/roles/freebsd_router/templates/suricata.yaml.j2"
+    dest: /usr/local/etc/suricata/suricata.yaml
+    owner: root
+    group: wheel
+    mode: '0644'
+  notify: restart suricata
+
+- name: Automazione aggiornamento ruleset via Cron
+  cron:
+    name: "Suricata ruleset update"
+    user: root
+    hour: "3"
+    minute: "30"
+    job: "/usr/local/bin/suricata-update > /dev/null 2>&1 && /usr/sbin/service suricata reload"
+
+- name: Assicura che Suricata sia avviato
+  service:
+    name: suricata
+    state: started

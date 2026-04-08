@@ -5,3 +5,17 @@
 
   roles:
     - freebsd_router
+
+- name: Configura Suricata IDS
+  hosts: bsd_router
+  become: yes
+  tags: suricata
+
+  handlers:
+    - name: restart suricata
+      service:
+        name: suricata
+        state: restarted
+
+  tasks:
+    - import_tasks: roles/freebsd_router/tasks/suricata.yml
