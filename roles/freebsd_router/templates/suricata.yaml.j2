@@ -1,7 +1,7 @@
 %YAML 1.1
 ---
 # Generato da Ansible - Non modificare a mano
-# Suricata IDS - Modalità passiva via AF_PACKET su {{ ext_if }}
+# Suricata IDS - Modalità passiva via pcap su {{ ext_if }}
 
 vars:
   address-groups:
@@ -32,16 +32,18 @@ vars:
     VXLAN_PORTS: 4789
     TEREDO_PORTS: 3544
 
-# --- Cattura passiva tramite AF_PACKET ---
+# --- Socket di controllo per suricatasc ---
+unix-command:
+  enabled: yes
+  filename: /var/run/suricata/suricata-command.socket
+
+# --- Cattura passiva via pcap ---
 # Suricata legge una copia del traffico sull'interfaccia WAN.
 # Non intercetta né blocca: se Suricata si ferma, il traffico continua.
-af-packet:
+# Il filtro BPF esclude i frame STP multicast che spammano i log.
+pcap:
   - interface: "{{ ext_if }}"
-    cluster-id: 99
-    cluster-type: cluster_flow
-    defrag: yes
-    use-mmap: yes
-    tpacket-v3: yes
+    bpf-filter: "not ether dst 01:80:c2:00:00:00 and not ether dst 01:80:c2:00:00:13"
 
 # --- Output ---
 outputs:
@@ -71,6 +73,12 @@ outputs:
         - tls:
             extended: no
 
+  - stats:
+      enabled: yes
+      interval: 60
+      append: yes
+      filename: /var/log/suricata/stats.log
+
 # --- Ruleset ---
 default-rule-path: /var/lib/suricata/rules
 rule-files:
@@ -87,7 +95,7 @@ logging:
         level: info
         filename: /var/log/suricata/suricata.log
 
-# --- Performance (calibrata per N100) ---
+# --- Performance per hardware ---
 threading:
   set-cpu-affinity: no
   detect-thread-ratio: 1.0
@@ -117,3 +125,10 @@ app-layer:
           dp: 53
     ssh:
       enabled: yes
+    # Protocolli SCADA/ICS disabilitati (non rilevanti per uso domestico)
+    modbus:
+      enabled: no
+    dnp3:
+      enabled: no
+    enip:
+      enabled: no

@@ -27,7 +27,7 @@ scrub in all fragment reassemble
 # ==============================================================================
 # --- 3. Translation (NAT & RDR) ---
 # ==============================================================================
-# NAT: Permette alla rete 10.0.0.0/24 di uscire su Internet tramite l'IP 192.168.0.x
+# NAT: Permette alla rete 10.0.0.0/24 di uscire su Internet tramite l'IP $ext_if
 nat on $ext_if from $int_net to any -> ($ext_if) static-port
 
 # Redirect Mumble

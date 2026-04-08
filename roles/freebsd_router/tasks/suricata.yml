@@ -1,6 +1,6 @@
 ---
 # ==============================================================================
-# Suricata IDS - Modalità passiva (AF_PACKET)
+# Suricata IDS - Modalità passiva (pcap)
 # Il traffico viene copiato dall'interfaccia WAN e analizzato senza interruzione.
 # ==============================================================================
 
@@ -17,8 +17,26 @@
     - { key: "suricata_enable", value: "YES" }
     - { key: "suricata_interface", value: "{{ ext_if }}" }
 
+- name: Creazione directory socket suricatasc
+  file:
+    path: /var/run/suricata
+    state: directory
+    owner: root
+    group: wheel
+    mode: '0755'
+
+- name: Disabilita regole SCADA/ICS non necessarie
+  copy:
+    content: |
+      group:modbus
+      group:dnp3
+    dest: /usr/local/etc/suricata/disable.conf
+    owner: root
+    group: wheel
+    mode: '0644'
+
 - name: Primo aggiornamento ruleset (Emerging Threats Open)
-  command: suricata-update
+  command: suricata-update --disable-conf /usr/local/etc/suricata/disable.conf
   args:
     creates: /var/lib/suricata/rules/suricata.rules
 
@@ -37,7 +55,7 @@
     user: root
     hour: "3"
     minute: "30"
-    job: "/usr/local/bin/suricata-update > /dev/null 2>&1 && /usr/sbin/service suricata reload"
+    job: "/usr/local/bin/suricata-update --disable-conf /usr/local/etc/suricata/disable.conf > /dev/null 2>&1 && /usr/sbin/service suricata reload"
 
 - name: Assicura che Suricata sia avviato
   service:
