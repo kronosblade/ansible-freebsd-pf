@@ -4,7 +4,7 @@
     user: "{{ user_name }}"
     state: present
     key: "{{ lookup('file', pub_key_path) }}"
-  
+
 - name: Hardening SSH - Disabilita autenticazione con password
   lineinfile:
     path: /etc/ssh/sshd_config
@@ -76,10 +76,10 @@
     name: "{{ item.key }}"
     value: "{{ item.value }}"
   loop:
-    - { key: "gateway_enable", value: "YES" }
-    - { key: "pf_enable", value: "YES" }
-    - { key: "pf_rules", value: "/etc/pf.conf" }
-    - { key: "pflog_enable", value: "YES" }
+    - {key: "gateway_enable", value: "YES"}
+    - {key: "pf_enable", value: "YES"}
+    - {key: "pf_rules", value: "/etc/pf.conf"}
+    - {key: "pflog_enable", value: "YES"}
 
 - name: Inizializzazione manuale della tabella blocked_countries
   shell: pfctl -t blocked_countries -T add 127.0.0.2
@@ -149,8 +149,8 @@
     name: "{{ item.key }}"
     value: "{{ item.value }}"
   loop:
-    - { key: "dhcpd_enable", value: "YES" }
-    - { key: "dhcpd_ifaces", value: "{{ int_if }}" } # vtnet1
+    - {key: "dhcpd_enable", value: "YES"}
+    - {key: "dhcpd_ifaces", value: "{{ int_if }}"} # vtnet1
 
 - name: Assicura che DHCPD sia avviato
   service:

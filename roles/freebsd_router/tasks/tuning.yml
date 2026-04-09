@@ -116,7 +116,16 @@
   tags: [tuning, never]
 
 - name: Mostra parametri di tuning applicati
-  command: sysctl net.inet.ip.redirect net.inet.icmp.drop_redirect kern.ipc.maxsockbuf net.inet.tcp.sendbuf_max net.inet.tcp.recvbuf_max net.inet.tcp.blackhole net.inet.udp.blackhole net.inet.ip.random_id net.pf.request_maxcount
+  shell: |
+    sysctl net.inet.ip.redirect \
+      net.inet.icmp.drop_redirect \
+      kern.ipc.maxsockbuf \
+      net.inet.tcp.sendbuf_max \
+      net.inet.tcp.recvbuf_max \
+      net.inet.tcp.blackhole \
+      net.inet.udp.blackhole \
+      net.inet.ip.random_id \
+      net.pf.request_maxcount
   register: tuning_result
   changed_when: false
   tags: [tuning, never]

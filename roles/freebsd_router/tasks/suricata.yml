@@ -14,8 +14,8 @@
     name: "{{ item.key }}"
     value: "{{ item.value }}"
   loop:
-    - { key: "suricata_enable", value: "YES" }
-    - { key: "suricata_interface", value: "{{ ext_if }}" }
+    - {key: "suricata_enable", value: "YES"}
+    - {key: "suricata_interface", value: "{{ ext_if }}"}
 
 - name: Creazione directory socket suricatasc
   file:
