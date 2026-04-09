@@ -1,7 +1,7 @@
 ---
 - name: Configura Router FreeBSD
   hosts: bsd_router
-  become: yes
+  become: true
 
   roles:
     - freebsd_router
@@ -11,7 +11,7 @@
 
 - name: Configura Suricata IDS
   hosts: bsd_router
-  become: yes
+  become: true
   tags: suricata
 
   handlers:
