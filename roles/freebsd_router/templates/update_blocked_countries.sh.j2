@@ -6,7 +6,13 @@ temp_file="/tmp/blocked_countries_temp.txt"
 batch_size=10000
 
 # Scarica/Genera i dati aggiornati
-/usr/local/bin/ipup -p -t CL:FR:PT > $original_file
+/usr/local/bin/ipup -p -t CL:RU:FR:PT > $original_file
+
+# Verifica che il download sia riuscito prima di flussare la tabella
+if [ ! -s "$original_file" ]; then
+    echo "Errore: download fallito o file vuoto. Tabella invariata."
+    exit 1
+fi
 
 # Funzione per aggiungere batch
 add_batch() {
