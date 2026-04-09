@@ -1,3 +1,6 @@
+# ansible-freebsd-pf
+![CI Status](https://github.com/kronosblade/ansible-freebsd-pf/actions/workflows/linting.yml/badge.svg)
+
 # FreeBSD Ansible Router & Firewall
 Questo repository contiene un'automazione Ansible per trasformare un'istanza FreeBSD in un router di rete professionale con firewalling avanzato e protezione dinamica. Nel caso specifico ho utilizzato Proxmox VE per creare due interfacce virtuali da "attaccare" alla macchina virtuale.
 Questa config può essere applicata tranquillamente in ambiente reale.
