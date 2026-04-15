@@ -17,3 +17,8 @@
   ansible.builtin.service:
     name: isc-dhcpd
     state: restarted
+
+- name: Restart wireguard
+  ansible.builtin.shell: |
+    wg setconf {{ wg_if }} /usr/local/etc/wireguard/{{ wg_if }}.conf
+  changed_when: true

@@ -1,0 +1,16 @@
+# ==============================================================================
+# WireGuard VPN Server - {{ wg_if }}
+# Generato da Ansible - Non modificare manualmente
+# ==============================================================================
+
+[Interface]
+PrivateKey = {{ wg_server_privkey.stdout }}
+ListenPort = {{ wg_port }}
+
+{% for client in wg_clients %}
+# --- {{ client.name }} ---
+[Peer]
+PublicKey = {{ wg_client_pubkeys[client.name] }}
+AllowedIPs = {{ client.ip }}
+
+{% endfor %}

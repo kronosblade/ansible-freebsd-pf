@@ -8,6 +8,11 @@ ssh_port    = "{{ ssh_port }}"
 admin_ip    = "{{ admin_ip }}"
 mumble_ip   = "{{ mumble_jail_ip }}"
 mumble_port = "{{ mumble_port }}"
+{% if wg_if is defined %}
+wg_if       = "{{ wg_if }}"
+wg_port     = "{{ wg_port }}"
+wg_net      = "{{ wg_network }}"
+{% endif %}
 
 # Tabelle per una gestione dinamica e sicura
 table <trusted_lan>       const { {{ admin_ip }}, 127.0.0.1 }
@@ -18,6 +23,9 @@ table <blocked_countries> persist
 # --- 2. Options & Normalization ---
 # ==============================================================================
 set skip on lo0
+{% if wg_if is defined %}
+set skip on $wg_if
+{% endif %}
 set block-policy drop
 set loginterface $ext_if
 
@@ -70,7 +78,14 @@ pass in quick on $int_if proto icmp from $int_if:network to $int_if icmp-type ec
 pass in quick on $ext_if inet proto icmp from <trusted_lan> to ($ext_if) icmp-type echoreq keep state
 pass in quick inet proto icmp icmp-type unreach keep state
 
-# --- D. Forwarding (Traffico verso i Server interni) ---
+# --- D. WireGuard VPN ---
+{% if wg_if is defined %}
+
+# WireGuard: Accesso UDP sulla WAN per il tunnel VPN
+pass in quick on $ext_if proto udp from any to ($ext_if) port $wg_port keep state
+{% endif %}
+
+# --- E. Forwarding (Traffico verso i Server interni) ---
 
 # Mumble: Accesso pubblico al server 10.0.0.x
 pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
@@ -79,6 +94,6 @@ pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
 
 pass in quick on $ext_if proto udp from any to $mumble_ip port $mumble_port keep state
 
-# --- E. Forwarding Generale LAN (Traffico che attraversa il Router) ---
+# --- F. Forwarding Generale LAN (Traffico che attraversa il Router) ---
 # Permette alla LAN di navigare su Internet
 pass in on $int_if from $int_if:network to any keep state
