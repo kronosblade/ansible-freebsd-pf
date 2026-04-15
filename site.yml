@@ -10,6 +10,9 @@
     - name: Importa task di tuning kernel
       ansible.builtin.import_tasks: roles/freebsd_router/tasks/tuning.yml
 
+    - name: Importa task WireGuard VPN
+      ansible.builtin.import_tasks: roles/freebsd_router/tasks/wireguard.yml
+
 - name: Configura Suricata IDS
   hosts: bsd_router
   become: true
