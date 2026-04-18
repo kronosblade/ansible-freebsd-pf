@@ -158,6 +158,29 @@
     name: isc-dhcpd
     state: started
 
+# --- NTP server (ntpd base system, esposto solo in LAN) ---
+- name: Configurazione NTP server
+  ansible.builtin.template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+    owner: root
+    group: wheel
+    mode: '0644'
+  notify: Restart ntpd
+
+- name: Abilitazione ntpd nel rc.conf
+  community.general.sysrc:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - {key: "ntpd_enable", value: "YES"}
+    - {key: "ntpd_sync_on_start", value: "YES"}
+
+- name: Assicura che ntpd sia avviato
+  ansible.builtin.service:
+    name: ntpd
+    state: started
+
 # --- Aggiornamenti di sicurezza ---
 # Eseguire manualmente con: ansible-playbook -i hosts.ini site.yml -K --tags upgrade
 

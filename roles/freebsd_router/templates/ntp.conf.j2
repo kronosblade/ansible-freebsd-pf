@@ -1,0 +1,41 @@
+# ==============================================================================
+# /etc/ntp.conf - gestito da Ansible
+# Server NTP esposto solo sulla LAN interna ({{ int_net }}).
+# ==============================================================================
+{# --- Derivazione network/netmask da int_net CIDR in puro Jinja (niente netaddr) --- #}
+{%- set _prefix = int_net.split('/')[1] | int -%}
+{%- set _ip_parts = int_net.split('/')[0].split('.') | map('int') | list -%}
+{%- set _host_bits = 32 - _prefix -%}
+{%- set _mask_int = (2 ** 32) - (2 ** _host_bits) -%}
+{%- set _ip_int = (_ip_parts[0] * 16777216) + (_ip_parts[1] * 65536) + (_ip_parts[2] * 256) + _ip_parts[3] -%}
+{%- set _net_int = _ip_int - (_ip_int % (2 ** _host_bits)) -%}
+{%- set _network = ((_net_int // 16777216) % 256) ~ '.' ~ ((_net_int // 65536) % 256) ~ '.' ~ ((_net_int // 256) % 256) ~ '.' ~ (_net_int % 256) -%}
+{%- set _netmask = ((_mask_int // 16777216) % 256) ~ '.' ~ ((_mask_int // 65536) % 256) ~ '.' ~ ((_mask_int // 256) % 256) ~ '.' ~ (_mask_int % 256) -%}
+
+# --- Upstream pool (FreeBSD project) ---
+pool 0.freebsd.pool.ntp.org iburst
+pool 1.freebsd.pool.ntp.org iburst
+pool 2.freebsd.pool.ntp.org iburst
+
+# --- Restrizioni globali: default deny totale ---
+# kod         -> invia pacchetti "Kiss-o'-Death" ai client che abusano
+# limited     -> rate limit
+# nomodify    -> nega query di modifica
+# notrap      -> disabilita protocollo trap (legacy)
+# nopeer      -> nega tentativi di peering
+# noquery     -> nega query ntpq/ntpdc (no monlist, no amplification)
+restrict default limited kod nomodify notrap nopeer noquery
+restrict -6 default limited kod nomodify notrap nopeer noquery
+
+# --- Localhost: accesso completo ---
+restrict 127.0.0.1
+restrict ::1
+
+# --- LAN interna: autorizzata a richiedere time sync ---
+restrict {{ _network }} mask {{ _netmask }} nomodify notrap nopeer
+
+# --- Drift file ---
+driftfile /var/db/ntpd.drift
+
+# --- Sicurezza: disabilita interfacce di management legacy ---
+disable monitor

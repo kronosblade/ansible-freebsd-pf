@@ -8,12 +8,6 @@ ssh_port    = "{{ ssh_port }}"
 admin_ip    = "{{ admin_ip }}"
 mumble_ip   = "{{ mumble_jail_ip }}"
 mumble_port = "{{ mumble_port }}"
-{% if wg_if is defined %}
-wg_if       = "{{ wg_if }}"
-wg_port     = "{{ wg_port }}"
-wg_net      = "{{ wg_network }}"
-{% endif %}
-
 # Tabelle per una gestione dinamica e sicura
 table <trusted_lan>       const { {{ admin_ip }}, 127.0.0.1 }
 table <bruteforce>        persist
@@ -23,9 +17,6 @@ table <blocked_countries> persist
 # --- 2. Options & Normalization ---
 # ==============================================================================
 set skip on lo0
-{% if wg_if is defined %}
-set skip on $wg_if
-{% endif %}
 set block-policy drop
 set loginterface $ext_if
 
@@ -37,7 +28,6 @@ scrub in all fragment reassemble
 # ==============================================================================
 # NAT: Permette alla rete interna di uscire su Internet tramite l'IP della WAN
 nat on $ext_if from $int_net to any -> ($ext_if) static-port
-
 # Redirect Mumble
 rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port $mumble_port -> $mumble_ip
 
@@ -73,19 +63,15 @@ pass in quick on $ext_if proto tcp from <trusted_lan> to ($ext_if) port $ssh_por
 # DNS (Unbound): Risoluzione per i client della rete interna
 pass in quick on $int_if proto { tcp, udp } from $int_if:network to $int_if port 53 keep state
 
+# NTP: Sincronizzazione oraria per i client della rete interna (LAN-only)
+pass in quick on $int_if proto udp from $int_if:network to $int_if port 123 keep state
+
 # ICMP: Permette ping e PMTUD (unreach/needfrag) per evitare connessioni appese
 pass in quick on $int_if proto icmp from $int_if:network to $int_if icmp-type echoreq keep state
 pass in quick on $ext_if inet proto icmp from <trusted_lan> to ($ext_if) icmp-type echoreq keep state
 pass in quick inet proto icmp icmp-type unreach keep state
 
-# --- D. WireGuard VPN ---
-{% if wg_if is defined %}
-
-# WireGuard: Accesso UDP sulla WAN per il tunnel VPN
-pass in quick on $ext_if proto udp from any to ($ext_if) port $wg_port keep state
-{% endif %}
-
-# --- E. Forwarding (Traffico verso i Server interni) ---
+# --- D. Forwarding (Traffico verso i Server interni) ---
 
 # Mumble: Accesso pubblico al server 10.0.0.x
 pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
@@ -94,6 +80,6 @@ pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
 
 pass in quick on $ext_if proto udp from any to $mumble_ip port $mumble_port keep state
 
-# --- F. Forwarding Generale LAN (Traffico che attraversa il Router) ---
+# --- E. Forwarding Generale LAN (Traffico che attraversa il Router) ---
 # Permette alla LAN di navigare su Internet
 pass in on $int_if from $int_if:network to any keep state
