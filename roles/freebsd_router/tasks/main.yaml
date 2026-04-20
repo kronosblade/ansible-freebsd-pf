@@ -43,7 +43,7 @@
   poll: 30     # polling ogni 30s per non far sembrare il task appeso
   register: ipdb_result
 
-- name: Ultime righe output ipdb-update (solo se ha girato)
+- name: Ultime righe output ipdb-update (solo se ha girato)  # noqa: no-handler
   ansible.builtin.debug:
     msg: "{{ ipdb_result.stdout_lines[-20:] | default(['nessun output']) }}"
   when: ipdb_result.changed | default(false)
