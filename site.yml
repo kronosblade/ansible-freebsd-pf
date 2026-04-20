@@ -10,6 +10,3 @@
     - name: Importa task di tuning kernel
       ansible.builtin.import_tasks: roles/freebsd_router/tasks/tuning.yml
 
-    - name: Importa task Suricata
-      ansible.builtin.import_tasks: roles/freebsd_router/tasks/suricata.yml
-      tags: suricata

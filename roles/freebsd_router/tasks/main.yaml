@@ -90,11 +90,6 @@
     - {key: "pf_rules", value: "/etc/pf.conf"}
     - {key: "pflog_enable", value: "YES"}
 
-- name: Inizializzazione manuale della tabella blocked_countries
-  ansible.builtin.command: pfctl -t blocked_countries -T add 127.0.0.2
-  changed_when: false
-  failed_when: false
-
 - name: Configurazione file PF (con validazione)
   ansible.builtin.template:
     src: pf.conf.j2
@@ -166,6 +161,11 @@
   ansible.builtin.service:
     name: isc-dhcpd
     state: started
+
+# --- Suricata IDS (opt-in) ---
+- name: Importa task Suricata IDS
+  ansible.builtin.import_tasks: suricata.yml
+  tags: [suricata, never]
 
 # --- Aggiornamenti di sicurezza ---
 # Eseguire manualmente con: ansible-playbook -i hosts.ini site.yml -K --tags upgrade
