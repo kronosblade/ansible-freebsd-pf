@@ -60,11 +60,11 @@
 - name: Configurazione log rotation Suricata (newsyslog)
   ansible.builtin.copy:
     content: |
-      # logfilename                              [owner:group]  mode  count  size  wh>
-      /var/log/suricata/eve.json                 root:wheel     640   7      10000 @T>
-      /var/log/suricata/fast.log                 root:wheel     640   7      *     @T>
-      /var/log/suricata/suricata.log             root:wheel     640   7      *     @T>
-      /var/log/suricata/stats.log                root:wheel     640   7      *     @T>
+      # logfilename                         [owner:group] mode count size when  flags
+      /var/log/suricata/eve.json            root:wheel    640  7     100000 @T00  Z
+      /var/log/suricata/fast.log            root:wheel    640  7     *      @T00  Z
+      /var/log/suricata/suricata.log        root:wheel    640  7     *      @T00  Z
+      /var/log/suricata/stats.log           root:wheel    640  7     *      @T00  Z
     dest: /etc/newsyslog.conf.d/suricata.conf
     owner: root
     group: wheel
