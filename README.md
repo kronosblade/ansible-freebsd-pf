@@ -1,47 +1,101 @@
 ![CI Status](https://github.com/kronosblade/ansible-freebsd-pf/actions/workflows/linting.yml/badge.svg)
 
 # FreeBSD Ansible Router & Firewall
-Questo repository contiene un'automazione Ansible per trasformare un'istanza FreeBSD in un router di rete professionale con firewalling avanzato e protezione dinamica. Nel caso specifico ho utilizzato Proxmox VE per creare due interfacce virtuali da "attaccare" alla macchina virtuale.
-Questa config può essere applicata tranquillamente in ambiente reale.
 
-La prima, la più interna, rappresenta la rete che ospita un servizio d'esempio di chat vocale, un'istanza di Mumble configurata su un container LXC. Il protocollo UDP richiede stabilità ed efficienza, FreeBSD con PF come Firewall si sposa bene con questi requisiti dato il network stack maturo e ottimizzato. 
+Automazione Ansible per trasformare un'istanza FreeBSD in un router di rete con firewalling avanzato, DNS cifrato, VPN e protezione dinamica. La configurazione è stata sviluppata su Proxmox VE con due interfacce virtuali, ma è applicabile in qualsiasi ambiente.
 
-# Architettura Logica
-Il sistema è progettato per gestire il traffico in entrata e in uscita filtrando le minacce prima che raggiungano i servizi interni (come Mumble o SSH).
-# Componenti Chiave
-1. PF Firewall (Packet Filter) è un filtro di pacchetti stateful con licenza BSD, un componente fondamentale per la gestione dei firewall. È paragonabile a netfilter (iptables), ipfw e ipfilter.
-PF è stato sviluppato per OpenBSD, ma è stato portato su molti altri sistemi operativi. 
-    - La configurazione è suddivisa in:
-        a. Macro e Tabelle: Gestione centralizzata di interfacce e gruppi di IP (Trusted LAN, Bruteforce, GeoBlock).
-        b. Polizza Default: "Block all" in ingresso per massimizzare la sicurezza (Whitelisting).
-        c. Rate Limiting: Protezione contro attacchi Brute Force su SSH e Mumble. Se un IP supera le soglie di connessione, viene inserito automaticamente in una tabella di blocco a livello kernel.
+## Topologia
 
-2. GeoBlocking Dinamico. Per questa sezione ringrazio il lavoro del Prof. [Stefano Marinelli](https://it-notes.dragas.net/2024/06/16/freebsd-blocking-country-access):
-    - Integrazione con ipdbtools per il filtraggio geografico.
-    - Automazione: Uno script (update_blocked_countries.sh) scarica i database IP aggiornati.
-    - Efficienza: Migliaia di range IP vengono caricati in tabelle PF ottimizzate per non impattare sulle prestazioni della CPU.
-    - Cron Job: Aggiornamento automatico quotidiano e al riavvio del sistema.
+```
+Internet
+    │
+[vtnet0] ext_if — 192.168.0.30/24
+    │
+ FreeBSD Router
+    │
+[vtnet1] int_if — 10.0.0.1/24
+    │
+ LAN interna (DHCP 10.0.0.100–200)
+    └── Mumble (LXC container)
+```
 
-3. Gestione IaC (Infrastructure as Code)
-    Separazione Dati/Logica: Variabili sensibili (IP, porte) segregate in group_vars.
-    Idempotenza: Ansible assicura che il router sia sempre nello stato desiderato senza riconfigurazioni manuali.
-    Sicurezza: Accesso SSH limitato a chiavi pubbliche e privilegi gestiti tramite doas.
+## Componenti
 
-# Guida Rapida
-    1. Configurazione: Copia hosts.ini.example e group_vars/bsd_router.yml.example rimuovendo l'estensione *.example*.
-    2. Personalizzazione: Inserisci il tuo admin_ip e le interfacce di rete (es. vtnet0).
+### PF Firewall
+Filtro di pacchetti stateful, default-deny in ingresso (whitelist). La configurazione è suddivisa in macro/tabelle, NAT, redirect e regole di filtraggio.
 
-## Deployment:
-    Bash
-    ansible-playbook -i hosts.ini site.yml
+- **Rate limiting SSH**: `max-src-conn-rate` + `overload <bruteforce> flush global` — gli IP che superano la soglia vengono bannati automaticamente a livello kernel.
+- **Rate limiting Mumble**: limiti permissivi con `source-track rule` per non penalizzare client legittimi dietro NAT.
+- **Anti-spoofing**: `antispoof` su entrambe le interfacce.
 
-# Comandi di Monitoraggio
-    1. Vedere ban attivi: 
-        `doas pfctl -t bruteforce -T show`
-    2. Vedere IP bloccati per nazione: 
-        `doas pfctl -t blocked_countries -T show`
-    3. Log in tempo reale: 
-        `doas tcpdump -n -e -ttt -i pflog0`
+### GeoBlocking Dinamico
+Integrazione con [ipdbtools](https://it-notes.dragas.net/2024/06/16/freebsd-blocking-country-access) per il filtraggio geografico per paese (ISO 3166-1 alpha-2).
 
-# Licenza
+- Sostituzione atomica della tabella PF (`pfctl -T replace -f`), nessuna finestra senza blocco.
+- Cron job per aggiornamento quotidiano e al riavvio.
+- Paesi configurabili tramite `geoblock_countries` (es. `"CN:RU:KP:IR"`).
+
+### Unbound DNS Resolver
+Resolver locale con **DNS-over-TLS** verso Quad9 (`9.9.9.9`) e Cloudflare (`1.1.1.1`) sulla porta 853.
+
+- Cache locale con TTL configurabile.
+- Protezione DNS rebinding per indirizzi privati.
+- Servito solo sulla LAN interna (`10.0.0.0/24`).
+
+### ISC DHCP Server
+Assegna IP ai client della LAN interna con gateway e DNS del router come default.
+
+### Suricata IDS *(detection only)*
+Intrusion Detection System in modalità passiva (pcap) sull'interfaccia WAN, analizza il traffico senza interromperlo, nessuna modalità inline/IPS. Ruleset Emerging Threats Open con aggiornamento automatico notturno via cron. Invocabile separatamente con `--tags suricata`.
+
+## Guida Rapida
+
+**1. Prerequisiti**
+```bash
+pip install ansible ansible-lint
+ansible-galaxy collection install -r requirements.yml
+```
+
+**2. Configurazione**
+```bash
+cp hosts.ini.example hosts.ini
+cp group_vars/bsd_router.yml.example group_vars/bsd_router.yml
+# Modifica i due file con le tue variabili (IP, interfacce, porte, chiave SSH)
+```
+
+**3. Deploy**
+```bash
+ansible-playbook -i hosts.ini site.yml
+```
+
+**4. Task opzionali** (richiedono `--tags` esplicito)
+```bash
+# Suricata IDS
+ansible-playbook -i hosts.ini site.yml --tags suricata
+
+# Tuning kernel (sysctl NAT/forwarding)
+ansible-playbook -i hosts.ini site.yml -K --tags tuning
+
+# Aggiornamenti di sicurezza
+ansible-playbook -i hosts.ini site.yml -K --tags upgrade
+```
+
+## Comandi di Monitoraggio
+
+```sh
+# IP bannati per brute force
+doas pfctl -t bruteforce -T show
+
+# IP bloccati per nazione
+doas pfctl -t blocked_countries -T show
+
+# Log firewall in tempo reale
+doas tcpdump -n -e -ttt -i pflog0
+
+# Stato connessioni attive
+doas pfctl -s states
+```
+
+## Licenza
+
 Progetto rilasciato sotto licenza MIT.
