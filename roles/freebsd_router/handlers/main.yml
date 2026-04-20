@@ -17,3 +17,8 @@
   ansible.builtin.service:
     name: isc-dhcpd
     state: restarted
+
+- name: Restart suricata
+  ansible.builtin.service:
+    name: suricata
+    state: restarted

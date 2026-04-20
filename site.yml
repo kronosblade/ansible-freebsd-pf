@@ -10,17 +10,6 @@
     - name: Importa task di tuning kernel
       ansible.builtin.import_tasks: roles/freebsd_router/tasks/tuning.yml
 
-- name: Configura Suricata IDS
-  hosts: bsd_router
-  become: true
-  tags: suricata
-
-  handlers:
-    - name: Restart suricata
-      ansible.builtin.service:
-        name: suricata
-        state: restarted
-
-  tasks:
     - name: Importa task Suricata
       ansible.builtin.import_tasks: roles/freebsd_router/tasks/suricata.yml
+      tags: suricata
