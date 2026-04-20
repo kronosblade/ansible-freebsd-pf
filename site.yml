@@ -9,4 +9,3 @@
   tasks:
     - name: Importa task di tuning kernel
       ansible.builtin.import_tasks: roles/freebsd_router/tasks/tuning.yml
-
