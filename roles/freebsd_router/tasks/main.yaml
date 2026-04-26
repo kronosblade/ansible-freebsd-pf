@@ -114,6 +114,28 @@
     - {key: "pf_rules", value: "/etc/pf.conf"}
     - {key: "pflog_enable", value: "YES"}
 
+- name: Garantisce directory anchor PF
+  ansible.builtin.file:
+    path: /etc/pf.anchors
+    state: directory
+    owner: root
+    group: wheel
+    mode: '0755'
+  when: gaming_host is defined and (gaming_host | length > 0)
+
+- name: Garantisce placeholder anchor (gestito dalla role dedicata)
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ item }}"
+    force: false
+    owner: root
+    group: wheel
+    mode: '0600'
+  loop:
+    - /etc/pf.anchors/gaming.rdr
+    - /etc/pf.anchors/gaming.filter
+  when: gaming_host is defined and (gaming_host | length > 0)
+
 - name: Configurazione file PF (con validazione)
   ansible.builtin.template:
     src: pf.conf.j2

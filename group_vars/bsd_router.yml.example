@@ -24,3 +24,8 @@ geoblock_countries: "CN:RU:KP:IR"
 # --- Utente e Chiavi ---
 user_name: "username"
 pub_key_path: "~/.ssh/id_rsa.pub"
+
+# --- Endpoint dedicato (applicato solo con --tags gaming) ---
+gaming_host: ""
+gaming_lan_port: 0
+gaming_wan_port: 0

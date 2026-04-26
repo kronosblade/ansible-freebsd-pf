@@ -5,6 +5,8 @@
 
   roles:
     - freebsd_router
+    - role: gaming
+      tags: [gaming, never]
 
   tasks:
     - name: Importa task di tuning kernel

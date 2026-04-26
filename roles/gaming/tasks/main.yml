@@ -1,0 +1,20 @@
+---
+- name: Deploy regole rdr endpoint dedicato
+  ansible.builtin.template:
+    src: endpoint.rdr.j2
+    dest: /etc/pf.anchors/gaming.rdr
+    owner: root
+    group: wheel
+    mode: '0600'
+  when: gaming_host | length > 0
+  notify: Reload pf
+
+- name: Deploy regole filter endpoint dedicato
+  ansible.builtin.template:
+    src: endpoint.filter.j2
+    dest: /etc/pf.anchors/gaming.filter
+    owner: root
+    group: wheel
+    mode: '0600'
+  when: gaming_host | length > 0
+  notify: Reload pf

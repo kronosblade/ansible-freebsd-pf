@@ -31,6 +31,10 @@ nat on $ext_if from $int_net to any -> ($ext_if) static-port
 # Redirect Mumble
 rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port $mumble_port -> $mumble_ip
 
+{% if gaming_host is defined and gaming_host | length > 0 %}
+include "/etc/pf.anchors/gaming.rdr"
+{% endif %}
+
 # ==============================================================================
 # --- 4. Filtering Rules (Ordine: Block -> Pass) ---
 # ==============================================================================
@@ -84,3 +88,7 @@ pass in quick on $ext_if proto udp from any to $mumble_ip port $mumble_port \
 # --- E. Forwarding Generale LAN (Traffico che attraversa il Router) ---
 # Permette alla LAN di navigare su Internet
 pass in on $int_if from $int_if:network to any keep state
+
+{% if gaming_host is defined and gaming_host | length > 0 %}
+include "/etc/pf.anchors/gaming.filter"
+{% endif %}

@@ -1,0 +1,8 @@
+pass in quick on $ext_if proto tcp from any to {{ gaming_host }} port {{ gaming_lan_port }} \
+    flags S/SA modulate state \
+    (max-src-conn 80, max-src-conn-rate 40/60, source-track rule, tcp.established 7200) \
+    set prio (6, 7)
+
+pass out quick on $int_if proto tcp from any to {{ gaming_host }} port {{ gaming_lan_port }} \
+    keep state \
+    set prio (6, 7)
