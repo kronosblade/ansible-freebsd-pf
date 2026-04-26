@@ -31,8 +31,8 @@ Filtro di pacchetti stateful, default-deny in ingresso (whitelist). La configura
 ### Filtraggio Geografico Dinamico
 Integrazione con [ipdbtools](https://it-notes.dragas.net/2024/06/16/freebsd-blocking-country-access) per il filtraggio per paese (ISO 3166-1 alpha-2). La modalità è selezionabile tramite la variabile `geoblock_mode`:
 
-- **`whitelist`** (default del progetto) — ammette solo i paesi in `geoblock_countries`, blocca tutto il resto del traffico WAN. Lista predefinita: UE + EEA + Regno Unito + Svizzera (32 codici, GB esplicito).
-- **`blacklist`** — comportamento legacy: blocca solo i paesi elencati.
+- **`whitelist`** (default del progetto): ammette solo i paesi in `geoblock_countries`, blocca tutto il resto del traffico WAN. Lista predefinita: UE + EEA + Regno Unito + Svizzera (32 codici, GB esplicito).
+- **`blacklist`**: comportamento legacy -> blocca solo i paesi elencati.
 
 Il passaggio fra le due modalità avviene cambiando una sola variabile e rilanciando il playbook. La tabella PF `<geo_countries>` viene aggiornata atomicamente (`pfctl -T replace -f`); cron job giornaliero e al boot. In modalità whitelist viene aggiunto un `pass <trusted_lan>` prima del blocco per evitare lockout dell'amministratore.
 
