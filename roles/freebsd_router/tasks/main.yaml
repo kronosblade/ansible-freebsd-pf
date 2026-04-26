@@ -138,9 +138,11 @@
     owner: root
     group: wheel
     mode: '0755'
-  when: gaming_host is defined and (gaming_host | length > 0)
+  when: >-
+    (gaming_host is defined and gaming_host | length > 0)
+    or (wg_peers is defined and wg_peers | length > 0)
 
-- name: Garantisce placeholder anchor (gestito dalla role dedicata)
+- name: Garantisce placeholder anchor gaming (gestito dalla role dedicata)
   ansible.builtin.copy:
     content: ""
     dest: "{{ item }}"
@@ -152,6 +154,20 @@
     - /etc/pf.anchors/gaming.rdr
     - /etc/pf.anchors/gaming.filter
   when: gaming_host is defined and (gaming_host | length > 0)
+
+- name: Garantisce placeholder anchor wireguard (gestito dalla role dedicata)
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ item }}"
+    force: false
+    owner: root
+    group: wheel
+    mode: '0600'
+  loop:
+    - /etc/pf.anchors/wg.nat
+    - /etc/pf.anchors/wg.allow
+    - /etc/pf.anchors/wg.filter
+  when: wg_peers is defined and (wg_peers | length > 0)
 
 - name: Configurazione file PF (con validazione)
   ansible.builtin.template:

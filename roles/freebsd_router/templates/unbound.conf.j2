@@ -3,6 +3,12 @@ server:
     # Specifica ogni interfaccia su una riga separata
     interface: 127.0.0.1
     interface: {{ lan_ip | default('10.0.0.1') }}
+{% if wg_peers is defined and wg_peers | length > 0 %}
+    interface: {{ wg_server_address.split('/')[0] }}
+    # ip-transparent permette il bind anche se wg0 non è ancora up al boot.
+    # Necessario perché Unbound viene configurato prima della role wireguard.
+    ip-transparent: yes
+{% endif %}
 
     do-ip4: yes
     do-ip6: no
@@ -12,6 +18,9 @@ server:
     # Sicurezza: permetti esplicitamente localhost e la LAN interna
     access-control: 127.0.0.0/8 allow
     access-control: {{ lan_network | default('10.0.0.0/24') }} allow
+{% if wg_peers is defined and wg_peers | length > 0 %}
+    access-control: {{ wg_net }} allow
+{% endif %}
 
     hide-identity: yes
     hide-version: yes

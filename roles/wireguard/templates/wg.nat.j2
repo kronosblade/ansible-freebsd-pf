@@ -1,0 +1,4 @@
+# NAT outbound per i client WireGuard verso la rete upstream e Internet.
+# I pacchetti sorgente {{ wg_net }} escono con l'IP del router su $ext_if,
+# quindi non serve route statica sul gateway upstream per il return path.
+nat on $ext_if from {{ wg_net }} to any -> ($ext_if) static-port

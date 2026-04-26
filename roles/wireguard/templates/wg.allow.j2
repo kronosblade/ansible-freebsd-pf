@@ -1,0 +1,8 @@
+# Tunnel WireGuard in arrivo sulla WAN (UDP).
+# Incluso PRIMA del geoblock per evitare che client legittimi fuori UE vengano
+# bloccati. La protezione contro pacchetti malformati è demandata a WireGuard
+# stesso (drop silenzioso senza handshake valido).
+# Niente overload<bruteforce>: PF non supporta max-src-conn-rate su UDP, quindi
+# usiamo solo max-src-states per limitare l'esaurimento di stato da flood.
+pass in quick on $ext_if inet proto udp from any to ($ext_if) port {{ wg_port }} \
+    keep state (max-src-states 100, source-track rule)

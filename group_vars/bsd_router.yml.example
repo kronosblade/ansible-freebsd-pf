@@ -39,3 +39,29 @@ pub_key_path: "~/.ssh/id_rsa.pub"
 gaming_host: ""
 gaming_lan_port: 0
 gaming_wan_port: 0
+
+# --- WireGuard (applicato solo con --tags wireguard) ---
+# Porta UDP esposta sulla WAN. Aprire/forwardare anche a monte sul gateway upstream.
+# Volutamente diversa dalla 51820 standard per ridurre lo scan opportunistico.
+wg_port: 51871
+
+# Subnet del tunnel: usata da PF per NAT outbound dei peer verso la rete upstream.
+wg_net: "10.10.0.0/24"
+
+# Indirizzo del server sull'interfaccia wg0 (CIDR coerente con wg_net).
+wg_server_address: "10.10.0.1/24"
+
+# Elenco dei peer (client). Vuoto = role disattivata anche con --tags wireguard.
+# La chiave pubblica del peer si genera lato client con: wg genkey | tee privatekey | wg pubkey
+# allowed_ips: indirizzo del client dentro il tunnel (di solito /32).
+# preshared_key: opzionale ma consigliato come secondo fattore (wg genpsk).
+wg_peers: []
+# Esempio:
+# wg_peers:
+#   - name: "laptop"
+#     public_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+#     allowed_ips: "10.10.0.2/32"
+#   - name: "phone"
+#     public_key: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
+#     allowed_ips: "10.10.0.3/32"
+#     preshared_key: "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="

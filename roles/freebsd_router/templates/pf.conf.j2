@@ -35,6 +35,10 @@ rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port $mumble_port -> $mu
 include "/etc/pf.anchors/gaming.rdr"
 {% endif %}
 
+{% if wg_peers is defined and wg_peers | length > 0 %}
+include "/etc/pf.anchors/wg.nat"
+{% endif %}
+
 # ==============================================================================
 # --- 4. Filtering Rules (Ordine: Block -> Pass) ---
 # ==============================================================================
@@ -45,6 +49,11 @@ antispoof quick for $int_if
 
 # --- A. Blocchi Immediati (Sicurezza) ---
 block in quick from <bruteforce>
+{% if wg_peers is defined and wg_peers | length > 0 %}
+# Pass tunnel WireGuard PRIMA del geoblock: la VPN deve essere raggiungibile
+# anche da paesi non in whitelist (uso in viaggio).
+include "/etc/pf.anchors/wg.allow"
+{% endif %}
 {% if geoblock_mode == 'whitelist' %}
 # Whitelist: il pass <trusted_lan> precede il block geo per evitare lockout admin
 pass in quick on $ext_if from <trusted_lan>
@@ -97,4 +106,8 @@ pass in on $int_if from $int_if:network to any keep state
 
 {% if gaming_host is defined and gaming_host | length > 0 %}
 include "/etc/pf.anchors/gaming.filter"
+{% endif %}
+
+{% if wg_peers is defined and wg_peers | length > 0 %}
+include "/etc/pf.anchors/wg.filter"
 {% endif %}

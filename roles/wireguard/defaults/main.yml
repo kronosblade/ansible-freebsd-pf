@@ -1,0 +1,15 @@
+---
+# Porta UDP di ascolto del server WireGuard sulla WAN.
+# Volutamente diversa dalla 51820 standard per ridurre lo scan opportunistico.
+wg_port: 51871
+
+# Subnet del tunnel (usata da PF per NAT outbound)
+wg_net: "10.10.0.0/24"
+
+# Indirizzo del server sull'interfaccia wg0 (in formato CIDR)
+wg_server_address: "10.10.0.1/24"
+
+# Elenco dei peer (client). Vuoto = nessun client autorizzato.
+# Ogni voce richiede: name, public_key, allowed_ips.
+# preshared_key è opzionale ma consigliato come secondo fattore.
+wg_peers: []
