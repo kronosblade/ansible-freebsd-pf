@@ -2,3 +2,8 @@
 # Default safe: se group_vars non specifica geoblock_mode, si comporta come la
 # vecchia logica blacklist. Evita lockout se group_vars è incompleto.
 geoblock_mode: "blacklist"
+
+# Reverse proxy HTTPS (es. nginx davanti a Jellyfin).
+# Vuoto = nessuna regola rdr/pass generata in pf.conf.
+nginx_proxy_ip: ""
+https_port: "443"

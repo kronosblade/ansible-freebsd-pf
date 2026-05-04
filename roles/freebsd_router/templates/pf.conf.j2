@@ -8,6 +8,10 @@ ssh_port    = "{{ ssh_port }}"
 admin_ip    = "{{ admin_ip }}"
 mumble_ip   = "{{ mumble_jail_ip }}"
 mumble_port = "{{ mumble_port }}"
+{% if nginx_proxy_ip is defined and nginx_proxy_ip | length > 0 %}
+nginx_ip    = "{{ nginx_proxy_ip }}"
+https_port  = "{{ https_port | default('443') }}"
+{% endif %}
 # Tabelle per una gestione dinamica e sicura
 table <trusted_lan>   const { {{ admin_ip }}, 127.0.0.1 }
 table <bruteforce>    persist
@@ -30,6 +34,10 @@ scrub in all fragment reassemble
 nat on $ext_if from $int_net to any -> ($ext_if) static-port
 # Redirect Mumble
 rdr on $ext_if proto { tcp, udp } from any to ($ext_if) port $mumble_port -> $mumble_ip
+{% if nginx_proxy_ip is defined and nginx_proxy_ip | length > 0 %}
+# Reverse proxy HTTPS verso server interno (es. nginx davanti a Jellyfin)
+rdr on $ext_if proto tcp from any to ($ext_if) port $https_port -> $nginx_ip
+{% endif %}
 
 {% if gaming_host is defined and gaming_host | length > 0 %}
 include "/etc/pf.anchors/gaming.rdr"
@@ -99,6 +107,17 @@ pass in quick on $ext_if proto tcp from any to $mumble_ip port $mumble_port \
 
 pass in quick on $ext_if proto udp from any to $mumble_ip port $mumble_port \
     keep state (max-src-states 100, source-track rule)
+
+{% if nginx_proxy_ip is defined and nginx_proxy_ip | length > 0 %}
+# Reverse proxy HTTPS (es. nginx davanti a Jellyfin). Geoblock già applicato
+# a monte: in modalità whitelist arrivano qui solo i paesi in <geo_countries>.
+# Limiti permissivi perché i client streaming (HLS/DASH) aprono molte
+# connessioni TCP in parallelo. Niente overload<bruteforce>: stesso motivo
+# della regola Mumble (client legittimi dietro CGNAT verrebbero bannati).
+pass in quick on $ext_if proto tcp from any to $nginx_ip port $https_port \
+    flags S/SA keep state \
+    (max-src-conn 500, max-src-conn-rate 200/10, source-track rule)
+{% endif %}
 
 # --- E. Forwarding Generale LAN (Traffico che attraversa il Router) ---
 # Permette alla LAN di navigare su Internet

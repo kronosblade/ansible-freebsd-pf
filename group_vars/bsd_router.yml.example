@@ -17,6 +17,14 @@ mumble_jail_ip: "1.2.3.4"
 mumble_port: "1234"
 admin_ip: "192.168.0.x"
 
+# --- Reverse proxy HTTPS (es. nginx davanti a Jellyfin) ---
+# IP statico del server interno che termina TLS. Deve essere fuori dal range
+# DHCP (dhcp_range_start - dhcp_range_end). Vuoto = nessuna regola generata.
+# Il geoblock si applica automaticamente: in modalità whitelist solo i paesi
+# in geoblock_countries possono raggiungere la 443.
+nginx_proxy_ip: "10.0.0.10"
+https_port: "443"
+
 # --- GeoBlocking ---
 # Modalità del filtro geografico:
 #   "blacklist" -> blocca i paesi elencati in geoblock_countries
