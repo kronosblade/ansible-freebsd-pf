@@ -47,6 +47,7 @@
     owner: root
     group: wheel
     mode: '0644'
+    validate: /usr/local/bin/suricata -T -c %s
   notify: Restart suricata
 
 - name: Automazione aggiornamento ruleset via Cron
