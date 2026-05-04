@@ -25,6 +25,18 @@ server:
     hide-identity: yes
     hide-version: yes
 
+    # --- DNSSEC validation ---
+    # Validator locale: difesa in profondità rispetto alla validazione fatta da
+    # Quad9/Cloudflare upstream. Il trust anchor (root.key) viene inizializzato
+    # da unbound-anchor al primo deploy e auto-aggiornato via RFC 5011.
+    # Domini non firmati: risolti normalmente (val-permissive-mode no = strict
+    # ma non blocca le risposte unsigned, blocca solo quelle signed-but-invalid).
+    # Domini con DNSSEC rotto: SERVFAIL (comportamento corretto).
+    module-config: "validator iterator"
+    auto-trust-anchor-file: "/usr/local/etc/unbound/root.key"
+    val-permissive-mode: no
+    harden-dnssec-stripped: yes
+
     # Protezione DNS Rebinding: blocca risposte DNS pubbliche
     # che puntano a indirizzi IP privati
     private-address: 10.0.0.0/8
