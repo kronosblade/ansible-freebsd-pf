@@ -1,4 +1,8 @@
 ---
+- name: Preflight - validazione variabili obbligatorie
+  ansible.builtin.import_tasks: preflight.yml
+  tags: always
+
 - name: Configura la chiave SSH autorizzata (exclusive = rimuove chiavi non gestite)
   ansible.posix.authorized_key:
     user: "{{ user_name }}"

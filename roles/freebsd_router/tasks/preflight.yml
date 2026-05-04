@@ -1,0 +1,74 @@
+---
+# ==============================================================================
+# Preflight: valida le variabili obbligatorie prima di qualsiasi side effect.
+# Fallisce subito con messaggio chiaro se group_vars/bsd_router.yml è incompleto,
+# evitando errori criptici (es. "pfctl: empty list" o "Undefined variable") che
+# si manifesterebbero molti task più tardi, magari dopo modifiche già applicate.
+# Le variabili con default sicuro in defaults/main.yml non vengono asserite qui.
+# ==============================================================================
+
+- name: "Preflight: variabili di rete obbligatorie"
+  ansible.builtin.assert:
+    that:
+      - ext_if is defined and ext_if | length > 0
+      - int_if is defined and int_if | length > 0
+      - int_net is defined and int_net | length > 0
+      - lan_ip is defined and lan_ip | length > 0
+      - lan_network is defined and lan_network | length > 0
+    fail_msg: |
+      Variabili di rete mancanti o vuote in group_vars/bsd_router.yml.
+      Richieste: ext_if, int_if, int_net, lan_ip, lan_network.
+      Vedi group_vars/bsd_router.yml.example per il formato corretto.
+    quiet: true
+
+- name: "Preflight: variabili DHCP obbligatorie"
+  ansible.builtin.assert:
+    that:
+      - dhcp_router_ip is defined and dhcp_router_ip | length > 0
+      - dhcp_range_start is defined and dhcp_range_start | length > 0
+      - dhcp_range_end is defined and dhcp_range_end | length > 0
+    fail_msg: |
+      Variabili DHCP mancanti in group_vars/bsd_router.yml.
+      Richieste: dhcp_router_ip, dhcp_range_start, dhcp_range_end.
+    quiet: true
+
+- name: "Preflight: variabili SSH e admin obbligatorie"
+  ansible.builtin.assert:
+    that:
+      - ssh_port is defined and ssh_port | string | length > 0
+      - admin_ip is defined and admin_ip | length > 0
+      - user_name is defined and user_name | length > 0
+      - pub_key_path is defined and pub_key_path | length > 0
+    fail_msg: |
+      Variabili SSH/admin mancanti in group_vars/bsd_router.yml.
+      Richieste: ssh_port, admin_ip, user_name, pub_key_path.
+      ATTENZIONE: admin_ip vuoto genera 'table <trusted_lan> const { , 127.0.0.1 }'
+      in pf.conf, fallisce pfctl -nf con errore criptico, e in modalità whitelist
+      causerebbe lockout admin completo.
+    quiet: true
+
+- name: "Preflight: variabili Mumble obbligatorie (referenziate da pf.conf anche se non usate)"
+  ansible.builtin.assert:
+    that:
+      - mumble_jail_ip is defined and mumble_jail_ip | length > 0
+      - mumble_port is defined and mumble_port | string | length > 0
+    fail_msg: |
+      Variabili Mumble mancanti in group_vars/bsd_router.yml.
+      Richieste: mumble_jail_ip, mumble_port.
+      Anche se non hai un server Mumble, queste variabili sono usate in pf.conf.j2
+      (regola rdr e pass) e devono avere valori validi. Esempio dummy:
+        mumble_jail_ip: "127.0.0.1"
+        mumble_port: "64738"
+    quiet: true
+
+- name: "Preflight: variabili GeoBlocking obbligatorie e modalità valida"
+  ansible.builtin.assert:
+    that:
+      - geoblock_countries is defined and geoblock_countries | length > 0
+      - geoblock_mode in ['whitelist', 'blacklist']
+    fail_msg: |
+      Variabili GeoBlocking mancanti o invalide in group_vars/bsd_router.yml.
+      Richieste:
+        - geoblock_countries: stringa di codici ISO separati da ":" (es. "IT:FR:DE")
+        - geoblock_mode: "whitelist" oppure "blacklist" (default da defaults/main.yml: "blacklist")
+    quiet: true
